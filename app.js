@@ -358,7 +358,7 @@ function drawScene(ctx, w, h, t, itemText, itemAlpha, surahName, progress, recit
   ctx.font = `300 ${Math.round(17 * u)}px "IBM Plex Sans Arabic"`;
   ctx.globalAlpha = 0.62; ctx.fillStyle = th.text;
   ctx.direction = 'ltr';
-  ctx.fillText(srcLabel, w / 2, fy + 30 * u);
+  ctx.fillText(sourceLabel(), w / 2, fy + 30 * u);
   ctx.direction = 'rtl';
   ctx.globalAlpha = 1;
 
@@ -424,7 +424,6 @@ async function play({ record }) {
 
   const reciterAr = reciterById(S.reciter).ar;
   const surahName = S.chapters[S.chapter - 1].name_arabic;
-  const srcLabel = sourceLabel();
 
   // التسجيل
   let recorder = null;
