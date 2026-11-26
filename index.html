@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>آيات — صانع فيديوهات قرآنية</title>
+<meta name="description" content="أنشئ فيديوهات قرآنية أنيقة بتلاوات حقيقية لأشهر القراء، جاهزة للنشر على تيك توك ويوتيوب.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Reem+Kufi:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🕌</text></svg>">
+</head>
+<body>
+<div class="bg-orbs"><span></span><span></span><span></span></div>
+
+<header class="site-header">
+  <div class="logo">آيات</div>
+  <p class="tagline">فيديوهات قرآنية أنيقة بتلاوات حقيقية — جاهزة للنشر في دقيقة</p>
+</header>
+
+<main class="layout">
+
+  <!-- المعاينة -->
+  <section class="preview-col">
+    <div class="preview-frame" id="previewFrame">
+      <canvas id="previewCanvas" width="540" height="960"></canvas>
+      <div class="preview-overlay" id="previewOverlay">
+        <button class="btn btn-gold btn-lg" id="btnPreview">▶ معاينة حية</button>
+        <p class="hint">المعاينة تشتغل بالصوت — اضغط واستمع</p>
+      </div>
+    </div>
+    <div class="preview-actions">
+      <button class="btn btn-ghost" id="btnStop" disabled>⏹ إيقاف</button>
+      <span class="duration-pill" id="durationPill" hidden>المدة: <b id="durationVal"></b></span>
+    </div>
+  </section>
+
+  <!-- الإعدادات -->
+  <section class="controls-col">
+
+    <div class="card">
+      <h2><span class="step">١</span> اختر المقطع</h2>
+      <div class="chips" id="quickChips"></div>
+      <div class="field">
+        <label for="surahSelect">السورة</label>
+        <select id="surahSelect"></select>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="fromAyah">من آية</label>
+          <input type="number" id="fromAyah" min="1" value="1">
+        </div>
+        <div class="field">
+          <label for="toAyah">إلى آية</label>
+          <input type="number" id="toAyah" min="1" value="7">
+        </div>
+        <button class="btn btn-ghost btn-sm" id="btnFullSurah">السورة كاملة</button>
+      </div>
+      <label class="check"><input type="checkbox" id="basmalaCheck" checked> البسملة في البداية</label>
+    </div>
+
+    <div class="card">
+      <h2><span class="step">٢</span> اختر القارئ</h2>
+      <div class="reciter-grid" id="reciterGrid"></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="step">٣</span> الشكل والثيم</h2>
+      <div class="field">
+        <label>أبعاد الفيديو</label>
+        <div class="seg" id="ratioSeg">
+          <button data-ratio="9:16" class="on">٩:١٦ تيك توك</button>
+          <button data-ratio="1:1">١:١ مربع</button>
+          <button data-ratio="16:9">١٦:٩ يوتيوب</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>الثيم</label>
+        <div class="theme-row" id="themeRow"></div>
+      </div>
+    </div>
+
+    <div class="card render-card">
+      <h2><span class="step">٤</span> التجهيز والتنزيل</h2>
+      <button class="btn btn-gold btn-block" id="btnRender">🎬 جهّز الفيديو</button>
+      <div class="progress-wrap" id="progressWrap" hidden>
+        <div class="progress-bar"><div id="progressFill"></div></div>
+        <p class="progress-text" id="progressText"></p>
+      </div>
+      <div class="done-box" id="doneBox" hidden>
+        <a class="btn btn-green btn-block" id="btnDownload" download>⬇ تحميل الفيديو</a>
+        <div class="caption-box">
+          <div class="caption-head">
+            <h3>العنوان الجاهز</h3>
+            <button class="btn btn-ghost btn-sm copy-btn" data-copy="titleOut">نسخ</button>
+          </div>
+          <p id="titleOut" class="caption-text"></p>
+          <div class="caption-head">
+            <h3>الوصف الجاهز</h3>
+            <button class="btn btn-ghost btn-sm copy-btn" data-copy="descOut">نسخ</button>
+          </div>
+          <p id="descOut" class="caption-text"></p>
+        </div>
+      </div>
+      <p class="fine-print">الفيديو بيتسجَّج داخل متصفحك مباشرة — النص القرآني من المصحف العثماني (Quran.com) والتلاوة تسجيل حقيقي للقارئ من Quran Foundation، والفيديو بيحمل سطر حقوق تلقائياً.</p>
+    </div>
+
+  </section>
+</main>
+
+<div class="toast" id="toast" hidden></div>
+
+<footer class="site-footer">
+  <p>النص القرآني: المصحف العثماني عبر Quran.com API • التلاوات: تسجيلات حقيقية عبر Quran Foundation (QuranicAudio) — تُنسب للقارئ والمصدر في كل فيديو</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
