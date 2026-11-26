@@ -17,7 +17,17 @@ const RECITERS = [
   { id: 5,  ar: 'هاني الرفاعي',              en: 'Hani Ar-Rifai' },
   { id: 11, ar: 'محمد الطبلاوي',             en: 'Mohamed Al-Tablawi' },
   { id: 12, ar: 'محمود خليل الحصري — المعلم', en: 'Al-Husary (Muallim)' },
+  // تلاوات everyayah.com (تسجيلات حقيقية، تُنسب للقارئ وللمصدر)
+  { id: 'ea:Fares_Abbad_64kbps',       ar: 'فارس عباد',      en: 'Fares Abbad',      ea: 'Fares_Abbad_64kbps' },
+  { id: 'ea:Yasser_Ad-Dussary_128kbps', ar: 'ياسر الدوسري',   en: 'Yasser Ad-Dossari', ea: 'Yasser_Ad-Dussary_128kbps' },
+  { id: 'ea:MaherAlMuaiqly128kbps',    ar: 'ماهر المعيقلي',  en: 'Maher Al-Muaiqly', ea: 'MaherAlMuaiqly128kbps' },
 ];
+
+function reciterById(id) { return RECITERS.find(r => String(r.id) === String(id)); }
+function sourceLabel() {
+  const rec = reciterById(S.reciter);
+  return rec && rec.ea ? 'Recitation: ' + rec.en + ' — everyayah.com' : 'Recitation: Quran Foundation — Quran.com / QuranicAudio';
+}
 
 const THEMES = {
   night: { name: 'ليل',    bg1: '#081120', bg2: '#132a4a', accent: '#e6c15c', accent2: '#9db9e8', text: '#f5edd8', glow: 'rgba(230,193,92,0.20)' },
@@ -101,12 +111,20 @@ async function loadVerses(ch) {
   return list;
 }
 
-async function loadAudioList(reciter, ch) {
-  const ck = reciter + ':' + ch;
+async function loadAudioList(reciterId, ch) {
+  const ck = String(reciterId) + ':' + ch;
   if (S.audioListCache[ck]) return S.audioListCache[ck];
-  const d = await api(`/recitations/${reciter}/by_chapter/${ch}?per_page=300`);
+  const rec = reciterById(reciterId);
   const map = {};
-  for (const f of d.audio_files) map[f.verse_key] = audioUrl(f.url);
+  if (rec && rec.ea) {
+    const cnt = S.chapters[ch - 1].verses_count;
+    const sss = String(ch).padStart(3, '0');
+    for (let n = 1; n <= cnt; n++)
+      map[ch + ':' + n] = `https://www.everyayah.com/data/${rec.ea}/${sss}${String(n).padStart(3, '0')}.mp3`;
+  } else {
+    const d = await api(`/recitations/${reciterId}/by_chapter/${ch}?per_page=300`);
+    for (const f of d.audio_files) map[f.verse_key] = audioUrl(f.url);
+  }
   S.audioListCache[ck] = map;
   return map;
 }
@@ -204,32 +222,85 @@ function drawScene(ctx, w, h, t, itemText, itemAlpha, surahName, progress, recit
   g.addColorStop(0, th.bg1); g.addColorStop(1, th.bg2);
   ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
 
-  // توهجات متحركة
+  // توهجات بطيئة جداً (أورورا هادئة)
   for (let i = 0; i < 3; i++) {
-    const gx = w * (0.5 + 0.38 * Math.sin(t * 0.11 + i * 2.2));
-    const gy = h * (0.35 + 0.3 * Math.cos(t * 0.09 + i * 1.7));
-    const gr = Math.max(w, h) * 0.45;
+    const gx = w * (0.5 + 0.34 * Math.sin(t * 0.045 + i * 2.2));
+    const gy = h * (0.36 + 0.26 * Math.cos(t * 0.038 + i * 1.7));
+    const gr = Math.max(w, h) * 0.48;
     const rg = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
     rg.addColorStop(0, th.glow); rg.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = rg; ctx.fillRect(0, 0, w, h);
   }
 
-  // نجوم
+  // تنفس ضوئي بطيء في المنتصف
+  const br = Math.min(w, h) * (0.52 + 0.05 * Math.sin(t * 0.32));
+  const bg2 = ctx.createRadialGradient(w / 2, h * 0.46, 0, w / 2, h * 0.46, br);
+  bg2.addColorStop(0, th.glow); bg2.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.globalAlpha = 0.55; ctx.fillStyle = bg2; ctx.fillRect(0, 0, w, h); ctx.globalAlpha = 1;
+
+  // أشعة ضوء مائلة ناعمة من أعلى
+  for (let i = 0; i < 3; i++) {
+    ctx.save();
+    ctx.translate(w * (0.24 + 0.26 * i), -h * 0.08);
+    ctx.rotate(-0.32 + 0.05 * Math.sin(t * 0.04 + i * 2.1));
+    const rg2 = ctx.createLinearGradient(0, 0, 0, h * 0.95);
+    rg2.addColorStop(0, th.glow); rg2.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalAlpha = 0.55; ctx.fillStyle = rg2;
+    ctx.fillRect(-26 * u, 0, 52 * u, h * 1.1);
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+
+  // نجوم تلمع ببطء
   if (!drawScene._stars || drawScene._sw !== w) { drawScene._stars = makeStars(w, h, 110); drawScene._sw = w; }
   for (const s of drawScene._stars) {
-    const a = 0.25 + 0.55 * Math.abs(Math.sin(t * s.s + s.p));
-    ctx.globalAlpha = a * 0.7; ctx.fillStyle = '#ffffff';
+    const a = 0.22 + 0.5 * Math.abs(Math.sin(t * s.s * 0.5 + s.p));
+    ctx.globalAlpha = a * 0.65; ctx.fillStyle = '#ffffff';
     ctx.beginPath(); ctx.arc(s.x, s.y, s.r * u, 0, 7); ctx.fill();
   }
   ctx.globalAlpha = 1;
 
-  // زخرفة نجمية كبيرة باهتة تدور ببطء
+  // ذرات ضوء تصعد ببطء
+  if (!drawScene._motes || drawScene._mw !== w) {
+    drawScene._motes = [];
+    for (let i = 0; i < 34; i++)
+      drawScene._motes.push({ x: Math.random() * w, ph: Math.random(), spd: h * (0.006 + Math.random() * 0.008), r: (1 + Math.random() * 2.4) });
+    drawScene._mw = w;
+  }
+  for (const mo of drawScene._motes) {
+    const y = (h + 60) - ((t * mo.spd + mo.ph * (h + 120)) % (h + 120));
+    const x = mo.x + 16 * u * Math.sin(t * 0.22 + mo.ph * 7);
+    const a = 0.08 + 0.11 * Math.abs(Math.sin(t * 0.5 + mo.ph * 9));
+    const mg = ctx.createRadialGradient(x, y, 0, x, y, mo.r * 3.2 * u);
+    mg.addColorStop(0, th.accent); mg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalAlpha = a; ctx.fillStyle = mg;
+    ctx.beginPath(); ctx.arc(x, y, mo.r * 3.2 * u, 0, 7); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // زخرفة نجمية كبيرة باهتة تدور ببطء شديد
   ctx.save();
-  ctx.translate(w / 2, h / 2); ctx.rotate(t * 0.02);
-  ctx.strokeStyle = th.accent; ctx.globalAlpha = 0.05; ctx.lineWidth = 1.4 * u;
+  ctx.translate(w / 2, h / 2); ctx.rotate(t * 0.007);
+  ctx.strokeStyle = th.accent; ctx.globalAlpha = 0.045; ctx.lineWidth = 1.4 * u;
   star8(ctx, 0, 0, Math.min(w, h) * 0.52, 0); ctx.stroke();
   star8(ctx, 0, 0, Math.min(w, h) * 0.40, Math.PI / 8); ctx.stroke();
   ctx.restore(); ctx.globalAlpha = 1;
+
+  // أمواج حريرية هادئة أسفل المشهد
+  for (let i = 0; i < 3; i++) {
+    const yBase = h * (0.76 + 0.075 * i);
+    const amp = (16 + 9 * i) * u;
+    const ph = t * (0.05 - 0.012 * i) + i * 2.3;
+    ctx.beginPath();
+    ctx.moveTo(0, h);
+    for (let x = 0; x <= w; x += w / 48)
+      ctx.lineTo(x, yBase + amp * Math.sin((x / w) * Math.PI * 2 * 1.4 + ph));
+    ctx.lineTo(w, h); ctx.closePath();
+    const wgv = ctx.createLinearGradient(0, yBase - amp, 0, h);
+    wgv.addColorStop(0, i === 1 ? th.accent2 : th.accent); wgv.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalAlpha = 0.05 + 0.012 * i; ctx.fillStyle = wgv; ctx.fill();
+  }
+  ctx.globalAlpha = 1;
 
   const m = 54 * u;   // هامش الإطار
 
@@ -287,7 +358,7 @@ function drawScene(ctx, w, h, t, itemText, itemAlpha, surahName, progress, recit
   ctx.font = `300 ${Math.round(17 * u)}px "IBM Plex Sans Arabic"`;
   ctx.globalAlpha = 0.62; ctx.fillStyle = th.text;
   ctx.direction = 'ltr';
-  ctx.fillText('Recitation: Quran Foundation — Quran.com / QuranicAudio', w / 2, fy + 30 * u);
+  ctx.fillText(srcLabel, w / 2, fy + 30 * u);
   ctx.direction = 'rtl';
   ctx.globalAlpha = 1;
 
@@ -351,8 +422,9 @@ async function play({ record }) {
   }
   S.total = cur - GAP;
 
-  const reciterAr = RECITERS.find(r => r.id === S.reciter).ar;
+  const reciterAr = reciterById(S.reciter).ar;
   const surahName = S.chapters[S.chapter - 1].name_arabic;
+  const srcLabel = sourceLabel();
 
   // التسجيل
   let recorder = null;
@@ -414,7 +486,7 @@ function stopAll() {
 /* ================= العنوان والوصف ================= */
 function buildCaption() {
   const ch = S.chapters[S.chapter - 1];
-  const reciter = RECITERS.find(r => r.id === S.reciter);
+  const reciter = reciterById(S.reciter);
   const range = S.from === S.to ? 'الآية ' + arDigits(S.from) : 'الآيات ' + arDigits(S.from) + '–' + arDigits(S.to);
   const rangeEn = S.from === S.to ? `verse ${S.from}` : `verses ${S.from}–${S.to}`;
 
@@ -426,7 +498,7 @@ function buildCaption() {
 A calm recitation of Surah ${ch.name_simple} (${rangeEn}) by ${reciter.en}.
 
 القارئ: ${reciter.ar}
-المصدر: Quran Foundation — Quran.com / QuranicAudio
+المصدر: ${reciter.ea ? 'everyayah.com — تسجيل القارئ' : 'Quran Foundation — Quran.com / QuranicAudio'}
 النص: المصحف العثماني (Quran.com)
 
 #قرآن #تلاوة #quran #tilawah #quranrecitation #${ch.name_simple.replace(/[^A-Za-z]/g, '')}`;
@@ -578,11 +650,11 @@ async function init() {
   });
 
   $('reciterGrid').innerHTML = RECITERS.map(r =>
-    `<button class="reciter-card${r.id === S.reciter ? ' on' : ''}" data-r="${r.id}">${r.ar}</button>`).join('');
+    `<button class="reciter-card${String(r.id) === String(S.reciter) ? ' on' : ''}" data-r="${r.id}">${r.ar}</button>`).join('');
   $('reciterGrid').addEventListener('click', e => {
     const b = e.target.closest('[data-r]'); if (!b) return;
-    S.reciter = +b.dataset.r;
-    document.querySelectorAll('.reciter-card').forEach(x => x.classList.toggle('on', +x.dataset.r === S.reciter));
+    S.reciter = /^\d+$/.test(b.dataset.r) ? +b.dataset.r : b.dataset.r;
+    document.querySelectorAll('.reciter-card').forEach(x => x.classList.toggle('on', String(x.dataset.r) === String(S.reciter)));
     saveState();
   });
 
