@@ -59,7 +59,7 @@ const TAIL = 0.9;          // ذيل بعد آخر آية
 const S = {
   chapters: [],
   chapter: 1, from: 1, to: 7,
-  reciter: 7, ratio: '9:16', theme: 'night', basmala: true,
+  reciter: 'ea:Fares_Abbad_64kbps', ratio: '9:16', theme: 'night', basmala: true,
   versesCache: {},        // chapter -> [{key, n, text}]
   audioListCache: {},     // `${reciter}:${chapter}` -> {key: url}
   items: [],              // playlist: {text, displayNum, buffer, dur}
@@ -430,18 +430,21 @@ async function play({ record }) {
   if (record) {
     const stream = canvas.captureStream(30);
     const ms = new MediaStream([...stream.getVideoTracks(), ...dest.stream.getAudioTracks()]);
-    // webm/vp9+opus: يقبله يوتيوب وتيك توك؛ mp4 احتياطي
-    const mimes = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm',
-                   'video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4'];
+    // mp4/h264+aac أولاً: يطلع جاهز للنشر مباشرة؛ webm احتياطي
+    // البيتريت يتظبط على طول الفيديو عشان الملف يفضل في حدود ~17MB
+    const totalEst = Math.max(10, S.total + TAIL);
+    const vbps = Math.max(700000, Math.min(9000000, Math.floor((17.5 * 8 * 1e6) / totalEst) - 190000));
+    const mimes = ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4',
+                   'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
     // بعض المتصفحات تقول isTypeSupported=true ثم يفشل الإنشاء — نجرّب فعلياً
     for (const m of mimes) {
       try {
         if (!MediaRecorder.isTypeSupported(m)) continue;
-        recorder = new MediaRecorder(ms, { mimeType: m, videoBitsPerSecond: 9_000_000, audioBitsPerSecond: 192_000 });
+        recorder = new MediaRecorder(ms, { mimeType: m, videoBitsPerSecond: vbps, audioBitsPerSecond: 160_000 });
         break;
       } catch (e) { recorder = null; }
     }
-    if (!recorder) recorder = new MediaRecorder(ms, { videoBitsPerSecond: 9_000_000, audioBitsPerSecond: 192_000 });
+    if (!recorder) recorder = new MediaRecorder(ms, { videoBitsPerSecond: vbps, audioBitsPerSecond: 160_000 });
     chunks = [];
     recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
     rec = recorder;
