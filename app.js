@@ -59,7 +59,7 @@ const TAIL = 0.9;          // ذيل بعد آخر آية
 const S = {
   chapters: [],
   chapter: 1, from: 1, to: 7,
-  reciter: 'ea:Fares_Abbad_64kbps', ratio: '9:16', theme: 'night', basmala: true,
+  reciter: 'ea:Fares_Abbad_64kbps', ratio: '9:16', theme: 'night', basmala: false,
   versesCache: {},        // chapter -> [{key, n, text}]
   audioListCache: {},     // `${reciter}:${chapter}` -> {key: url}
   items: [],              // playlist: {text, displayNum, buffer, dur}
